@@ -9,16 +9,16 @@ export class QuizzesResolver {
 
     @Query(returns => [Quiz])
     quizzes(): Promise<Quiz []> {
-        return this.quizzesService.findAllAsync();
+        return this.quizzesService.findAll();
     }
 
     @Mutation(returns => Quiz)
     createQuiz(@Args('createQuizInput') createQuizInput: createQuizInput): Promise<Quiz> {
-        return this.quizzesService.createQuizAsync(createQuizInput);
+        return this.quizzesService.createQuiz(createQuizInput);
     }
 
     @Query(returns => Quiz)
     getQuiz(@Args('id', {type: () => Int}) id: number): Promise<Quiz> {
-        return this.quizzesService.findOneAsync(id);
+        return this.quizzesService.findOne(id);
     }
 }

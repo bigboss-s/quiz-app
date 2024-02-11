@@ -6,11 +6,8 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SingleQuestionsModule } from './single-questions/single-questions.module';
-import { MultipleQuestionsModule } from './multiple-questions/multiple-questions.module';
-import { SortingQuestionsModule } from './sorting-questions/sorting-questions.module';
-import { OpenQuestionsModule } from './open-questions/open-questions.module';
 import { AnswersModule } from './answers/answers.module';
+import { QuestionsModule } from './questions/questions.module';
 
 @Module({
   imports: [
@@ -29,11 +26,8 @@ import { AnswersModule } from './answers/answers.module';
       synchronize: true,
     }),
     QuizzesModule,
-    SingleQuestionsModule,
-    MultipleQuestionsModule,
-    SortingQuestionsModule,
-    OpenQuestionsModule,
-    AnswersModule
+    AnswersModule,
+    QuestionsModule
   ],
   controllers: [AppController],
   providers: [AppService],

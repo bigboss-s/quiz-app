@@ -2,9 +2,35 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Answer {
+  id: Int!
+  answerString: String!
+  isCorrect: Boolean
+  questionId: Int!
+  question: Question!
+}
+
+type Question {
+  id: Int!
+  questionString: String!
+  type: QuestionType!
+  quizId: Int!
+  quiz: Quiz!
+  answers: Answer!
+}
+
+enum QuestionType {
+  SINGLE_ANSWER
+  MULTIPLE_ANSWERS
+  ORDERED_ANSWERS
+  OPEN_ANSWER
+}
+
 type Quiz {
   id: Int!
   name: String!
+  description: String!
+  questions: [Question!]!
 }
 
 type Query {
@@ -18,4 +44,17 @@ type Mutation {
 
 input createQuizInput {
   name: String!
+  description: String!
+  questions: [createQuestionInput!]!
+}
+
+input createQuestionInput {
+  questionString: String!
+  type: QuestionType!
+  answers: [createAnswerInput!]!
+}
+
+input createAnswerInput {
+  answerString: String!
+  isCorrect: Boolean
 }
