@@ -42,8 +42,10 @@ export class Question{
     @Field(type => Quiz)
     quiz: Quiz;
 
-    @OneToMany(() => Answer, answer => answer.question)
-    @Field(type => Answer)
-    answers?: Answer[]
+    @OneToMany(() => Answer, answer => answer.question, {
+        cascade: true
+    })
+    @Field(type => [Answer])
+    answers: Answer[];
 
 }

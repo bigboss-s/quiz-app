@@ -6,7 +6,6 @@ import { createAnswerInput } from "src/answers/dto/create-answer.input";
 @InputType()
 export class createQuestionInput {
     @IsNotEmpty()
-    @IsAlphanumeric()
     @Field()
     questionString: string;
 

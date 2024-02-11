@@ -8,17 +8,17 @@ export class QuizzesResolver {
     constructor(private quizzesService: QuizzesService) {}
 
     @Query(returns => [Quiz])
-    quizzes(): Promise<Quiz []> {
+    async quizzes(): Promise<Quiz []> {
         return this.quizzesService.findAll();
     }
 
     @Mutation(returns => Quiz)
-    createQuiz(@Args('createQuizInput') createQuizInput: createQuizInput): Promise<Quiz> {
+    async createQuiz(@Args('createQuizInput') createQuizInput: createQuizInput): Promise<Quiz> {
         return this.quizzesService.createQuiz(createQuizInput);
     }
 
     @Query(returns => Quiz)
-    getQuiz(@Args('id', {type: () => Int}) id: number): Promise<Quiz> {
+    async getQuiz(@Args('id', {type: () => Int}) id: number): Promise<Quiz> {
         return this.quizzesService.findOne(id);
     }
 }

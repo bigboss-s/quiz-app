@@ -18,8 +18,10 @@ export class Quiz{
     @Field()
     description: string;
 
-    @OneToMany(() => Question, question => question.quiz)
+    @OneToMany(() => Question, question => question.quiz, {
+        cascade: true
+    })
     @Field(type => [Question])
-    questions?: Question[]
+    questions?: Question[];
 
 }

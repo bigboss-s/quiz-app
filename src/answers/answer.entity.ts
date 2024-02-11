@@ -18,6 +18,10 @@ export class Answer{
     @Field({nullable: true})
     isCorrect?: boolean;
 
+    @Column({nullable: true})
+    @Field({nullable: true})
+    order?: number;
+
     @Column()
     @Field(type => Int)
     questionId: number;

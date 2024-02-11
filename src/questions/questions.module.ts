@@ -3,9 +3,10 @@ import { QuestionsService } from './questions.service';
 import { QuestionsResolver } from './questions.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Question } from './questions.entity';
+import { AnswersModule } from 'src/answers/answers.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Question])],
+  imports: [TypeOrmModule.forFeature([Question]), AnswersModule],
   providers: [QuestionsService, QuestionsResolver],
   exports: [QuestionsService, TypeOrmModule.forFeature([Question])]
 })

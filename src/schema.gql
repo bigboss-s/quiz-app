@@ -6,6 +6,7 @@ type Answer {
   id: Int!
   answerString: String!
   isCorrect: Boolean
+  order: Float
   questionId: Int!
   question: Question!
 }
@@ -16,7 +17,7 @@ type Question {
   type: QuestionType!
   quizId: Int!
   quiz: Quiz!
-  answers: Answer!
+  answers: [Answer!]!
 }
 
 enum QuestionType {
@@ -36,6 +37,8 @@ type Quiz {
 type Query {
   quizzes: [Quiz!]!
   getQuiz(id: Int!): Quiz!
+  questions: [Question!]!
+  answers: [Answer!]!
 }
 
 type Mutation {
@@ -57,4 +60,5 @@ input createQuestionInput {
 input createAnswerInput {
   answerString: String!
   isCorrect: Boolean
+  order: Float
 }
