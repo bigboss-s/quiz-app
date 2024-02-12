@@ -4,6 +4,8 @@ import { Quiz } from './quiz.entity';
 import { CreateQuizInput } from './dto/create-quiz.input';
 import { ShowQuizDTO } from './dto/show-quiz.type';
 import { QuestionType } from 'src/questions/questions.entity';
+import { ReturnQuizDTO } from './dto/return-quiz.input';
+import { ResultDTO } from './dto/reusult.type';
 
 @Resolver(of => Quiz)
 export class QuizzesResolver {
@@ -15,7 +17,7 @@ export class QuizzesResolver {
     }
 
     @Mutation(returns => Quiz)
-    async createQuiz(@Args('createQuizInput') createQuizInput: CreateQuizInput): Promise<Quiz> {
+    async createQuiz(@Args('CreateQuizInput') createQuizInput: CreateQuizInput): Promise<Quiz> {
         return await this.quizzesService.createQuiz(createQuizInput);
     }
 
@@ -26,27 +28,12 @@ export class QuizzesResolver {
 
     @Query(returns => ShowQuizDTO)
     async showQuiz(@Args('id', {type: () => Int}) id: number): Promise<ShowQuizDTO> {
-        const quiz = await this.quizzesService.findOne(id);
-        const showQuiz = {
-            name: quiz.name,
-            description: quiz.description,
-            questions: quiz.questions.map(question => {
-                if (question.type !== QuestionType.OPEN_ANSWER){
-                    return {
-                        questionString: question.questionString,
-                        type: question.type,
-                        answers: question.answers.map(answer => ({
-                            answerString: answer.answerString
-                        })),
-                    }
-                } else {
-                    return {
-                        questionString: question.questionString,
-                        type: question.type
-                    }
-                }
-            })
-        }
-        return showQuiz;
+        return await this.quizzesService.findOneToShow(id);
+    }
+
+    @Query(returns => ResultDTO)
+    async checkQuiz(@Args('ReturnQuizDTO', {type: () => ReturnQuizDTO}) returnedQuiz: ReturnQuizDTO): Promise<ResultDTO>{
+        return await this.quizzesService.checkQuiz(returnedQuiz);
+
     }
 }

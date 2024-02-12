@@ -1,11 +1,10 @@
 import { Field, Int, ObjectType } from "@nestjs/graphql";
 
 @ObjectType()
-export class ShowAnswerDTO {
+export class ResultDTO {
+    @Field(type => Int)
+    scoredPoints: number;
 
     @Field(type => Int)
-    id: number;
-
-    @Field()
-    answerString: string;
+    maxPoints: number;
 }

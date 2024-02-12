@@ -3,18 +3,20 @@ import { Quiz } from './quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateQuizInput } from './dto/create-quiz.input';
-import { QuestionsService } from 'src/questions/questions.service';
-import { AnswersService } from 'src/answers/answers.service';
 import { Question, QuestionType } from 'src/questions/questions.entity';
 import { Answer } from 'src/answers/answer.entity';
 import { CreateAnswerInput } from 'src/answers/dto/create-answer.input';
+import { ShowQuizDTO } from './dto/show-quiz.type';
+import { ReturnQuizDTO } from './dto/return-quiz.input';
+import { distance } from 'fastest-levenshtein';
+import { ResultDTO } from './dto/reusult.type';
 
 @Injectable()
 export class QuizzesService {
   constructor(
     @InjectRepository(Quiz) private quizzesRepository: Repository<Quiz>,
-    @InjectRepository(Question) private questionsService: Repository<Question>,
-    @InjectRepository(Answer) private answersService: Repository<Answer>
+    @InjectRepository(Question) private questionsRepository: Repository<Question>,
+    @InjectRepository(Answer) private answersRepository: Repository<Answer>
   ) { }
 
   async createQuiz(createQuizInput: CreateQuizInput): Promise<Quiz> {
@@ -32,14 +34,14 @@ export class QuizzesService {
           }))
         }))
       });
-  
+
       quiz.questions.forEach(question => {
         const correctAnswersCount = question.answers.filter(answer => answer.isCorrect).length;
         const correctNotNullAnswersCount = question.answers.filter(answer => answer.isCorrect !== null).length;
         const orderedAnswerCount = question.answers.filter(answer => answer.order !== null).length;
 
-        if ([QuestionType.MULTIPLE_ANSWERS, QuestionType.SINGLE_ANSWER].includes(question.type) 
-        && correctNotNullAnswersCount !== question.answers.length){
+        if ([QuestionType.MULTIPLE_ANSWERS, QuestionType.SINGLE_ANSWER].includes(question.type)
+          && correctNotNullAnswersCount !== question.answers.length) {
           throw new BadRequestException("All answers to single and multiple answer questions must be marked as correct or false");
         }
         if (question.type === QuestionType.MULTIPLE_ANSWERS && correctAnswersCount === 0) {
@@ -48,25 +50,21 @@ export class QuizzesService {
         if (question.type === QuestionType.SINGLE_ANSWER && correctAnswersCount !== 1) {
           throw new BadRequestException("Single answer question must have exactly one correct answer.");
         }
-        if (question.type === QuestionType.OPEN_ANSWER && question.answers.length !== 1){
+        if (question.type === QuestionType.OPEN_ANSWER && question.answers.length !== 1) {
           throw new BadRequestException("Plain text answer questions must have exactly one answer");
         }
-        if (question.type === QuestionType.ORDERED_ANSWERS && orderedAnswerCount !== question.answers.length){
+        if (question.type === QuestionType.ORDERED_ANSWERS && orderedAnswerCount !== question.answers.length) {
           throw new BadRequestException("All answers to a sorting question must be ordered");
         }
-        if (question.type === QuestionType.ORDERED_ANSWERS && !this.checkAnswerOrder(question.answers)){
+        if (question.type === QuestionType.ORDERED_ANSWERS && !this.checkAnswerOrder(question.answers)) {
           throw new BadRequestException("Incorrect answer order. Ordering should start on 1 and increment by 1.");
         }
-
-
       });
-  
       return quiz;
     });
-  
   }
 
-  private checkAnswerOrder(answers: CreateAnswerInput[]){
+  private checkAnswerOrder(answers: CreateAnswerInput[]) {
     const orders = answers.map(answer => answer.order);
     orders.sort();
     for (let i = 0; i < orders.length; i++) {
@@ -88,5 +86,100 @@ export class QuizzesService {
       where: { id: quizId },
       relations: ['questions', 'questions.answers'],
     });
+  }
+
+  async findOneToShow(quizId: number): Promise<ShowQuizDTO> {
+    const quiz = await this.findOne(quizId);
+    const showQuiz = {
+      id: quiz.id,
+      name: quiz.name,
+      description: quiz.description,
+      questions: quiz.questions.map(question => {
+        if (question.type !== QuestionType.OPEN_ANSWER) {
+          return {
+            id: question.id,
+            questionString: question.questionString,
+            type: question.type,
+            answers: question.answers.map(answer => ({
+              id: answer.id,
+              answerString: answer.answerString
+            })),
+          }
+        } else {
+          return {
+            id: question.id,
+            questionString: question.questionString,
+            type: question.type
+          }
+        }
+      })
+    }
+    return showQuiz;
+  }
+
+  async checkQuiz(returnedQuiz: ReturnQuizDTO): Promise<ResultDTO> {
+    let maxPoints = 0;
+    let scoredPoints = 0;
+
+    const quiz = await this.findOne(returnedQuiz.id);
+    const questionMap = quiz.questions.reduce((acc, question) => {
+      acc[question.id] = question.answers;
+      return acc;
+    }, {});
+    for (const returnedQuestion of returnedQuiz.questions) {
+      maxPoints++;
+      switch (returnedQuestion.type) {
+        
+        case QuestionType.SINGLE_ANSWER:
+        case QuestionType.MULTIPLE_ANSWERS: {
+          const answerMap: Record<number, boolean> = {};
+          questionMap[returnedQuestion.id].forEach(question => {
+            answerMap[question.id] = question.isCorrect;
+          });
+          let isCorrect = true;
+          for (const returnedAnswer of returnedQuestion.answers) {
+            if (returnedAnswer.isCheckedTrue !== answerMap[returnedAnswer.id]) {
+              console.log("Miss on " + returnedAnswer.id + ": " + returnedAnswer.isCheckedTrue + " instead of " + answerMap[returnedAnswer.id]);
+              isCorrect = false;
+              break;
+            }
+          }
+          if (isCorrect) scoredPoints++;
+          break;
+        }
+
+        case QuestionType.ORDERED_ANSWERS: {
+          const answerMap: Record<number, number> = {};
+          questionMap[returnedQuestion.id].forEach(question => {
+            answerMap[question.id] = question.order;
+          })
+          let isCorrect = true;
+          for (const returnedAnswer of returnedQuestion.answers) {
+            if (returnedAnswer.checkedOrder !== answerMap[returnedAnswer.id]) {
+              isCorrect = false;
+              console.log("Miss on " + returnedAnswer.id + ": " + returnedAnswer.checkedOrder + " instead of " + answerMap[returnedAnswer.id])
+              break;
+            }
+          }
+          if (isCorrect) scoredPoints++;
+          break;
+        }
+
+        case QuestionType.OPEN_ANSWER: {
+          const correctAnswer = questionMap[returnedQuestion.id][0].answerString;
+          if (distance(correctAnswer, returnedQuestion.answers[0].answerString) < 3) {
+            scoredPoints++
+          } else {
+            console.log("Miss on " + returnedQuestion.answers[0].id + ": " + returnedQuestion.answers[0].answerString + " instead of " + correctAnswer);
+          }
+          break;
+        }
+      }
+    }
+    return {
+      scoredPoints: scoredPoints,
+      maxPoints: maxPoints
+    }
+
   }
 }
