@@ -2,12 +2,12 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Quiz } from './quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { createQuizInput } from './dto/create-quiz.input';
+import { CreateQuizInput } from './dto/create-quiz.input';
 import { QuestionsService } from 'src/questions/questions.service';
 import { AnswersService } from 'src/answers/answers.service';
 import { Question, QuestionType } from 'src/questions/questions.entity';
 import { Answer } from 'src/answers/answer.entity';
-import { createAnswerInput } from 'src/answers/dto/create-answer.input';
+import { CreateAnswerInput } from 'src/answers/dto/create-answer.input';
 
 @Injectable()
 export class QuizzesService {
@@ -17,7 +17,7 @@ export class QuizzesService {
     @InjectRepository(Answer) private answersService: Repository<Answer>
   ) { }
 
-  async createQuiz(createQuizInput: createQuizInput): Promise<Quiz> {
+  async createQuiz(createQuizInput: CreateQuizInput): Promise<Quiz> {
     return await this.quizzesRepository.manager.transaction(async entityManager => {
       const quiz = await entityManager.save(Quiz, {
         name: createQuizInput.name,
@@ -66,7 +66,7 @@ export class QuizzesService {
   
   }
 
-  private checkAnswerOrder(answers: createAnswerInput[]){
+  private checkAnswerOrder(answers: CreateAnswerInput[]){
     const orders = answers.map(answer => answer.order);
     orders.sort();
     for (let i = 0; i < orders.length; i++) {
@@ -83,9 +83,10 @@ export class QuizzesService {
     });
   }
 
-  async findOne(id: number): Promise<Quiz> {
-    return await this.quizzesRepository.findOneByOrFail({
-      id: id
+  async findOne(quizId: number): Promise<Quiz> {
+    return await this.quizzesRepository.findOne({
+      where: { id: quizId },
+      relations: ['questions', 'questions.answers'],
     });
   }
 }

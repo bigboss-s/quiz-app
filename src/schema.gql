@@ -34,30 +34,47 @@ type Quiz {
   questions: [Question!]!
 }
 
+type ShowAnswerDTO {
+  answerString: String!
+}
+
+type ShowQuestionDTO {
+  questionString: String!
+  type: QuestionType!
+  answers: [ShowAnswerDTO]
+}
+
+type ShowQuizDTO {
+  name: String!
+  description: String!
+  questions: [ShowQuestionDTO!]!
+}
+
 type Query {
-  quizzes: [Quiz!]!
-  getQuiz(id: Int!): Quiz!
+  getQuizzes: [Quiz!]!
+  getFullQuiz(id: Int!): Quiz!
+  showQuiz(id: Int!): ShowQuizDTO!
   questions: [Question!]!
   answers: [Answer!]!
 }
 
 type Mutation {
-  createQuiz(createQuizInput: createQuizInput!): Quiz!
+  createQuiz(createQuizInput: CreateQuizInput!): Quiz!
 }
 
-input createQuizInput {
+input CreateQuizInput {
   name: String!
   description: String!
-  questions: [createQuestionInput!]!
+  questions: [CreateQuestionInput!]!
 }
 
-input createQuestionInput {
+input CreateQuestionInput {
   questionString: String!
   type: QuestionType!
-  answers: [createAnswerInput!]!
+  answers: [CreateAnswerInput!]!
 }
 
-input createAnswerInput {
+input CreateAnswerInput {
   answerString: String!
   isCorrect: Boolean
   order: Float

@@ -1,10 +1,10 @@
 import { Field, InputType } from "@nestjs/graphql";
 import { IsAlpha, IsAlphanumeric, IsNotEmpty } from "class-validator";
 import { QuestionType } from "../questions.entity";
-import { createAnswerInput } from "src/answers/dto/create-answer.input";
+import { CreateAnswerInput } from "src/answers/dto/create-answer.input";
 
 @InputType()
-export class createQuestionInput {
+export class CreateQuestionInput {
     @IsNotEmpty()
     @Field()
     questionString: string;
@@ -12,7 +12,7 @@ export class createQuestionInput {
     @Field(type => QuestionType)
     type: QuestionType;
 
-    @Field(type => [createAnswerInput])
-    answers: createAnswerInput[]
+    @Field(type => [CreateAnswerInput])
+    answers: CreateAnswerInput[]
 
 }
