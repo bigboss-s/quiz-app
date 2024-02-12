@@ -3,7 +3,6 @@ import { QuizzesService } from './quizzes.service';
 import { Quiz } from './quiz.entity';
 import { CreateQuizInput } from './dto/create-quiz.input';
 import { ShowQuizDTO } from './dto/show-quiz.type';
-import { QuestionType } from 'src/questions/questions.entity';
 import { ReturnQuizDTO } from './dto/return-quiz.input';
 import { ResultDTO } from './dto/reusult.type';
 

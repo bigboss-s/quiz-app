@@ -1,5 +1,5 @@
 import { Field, InputType, Int, ObjectType } from "@nestjs/graphql";
-import { ReturnAnswerDTO } from "src/answers/dto/return-answer.input";
+import { ReturnAnswerDTO } from "../../answers/dto/return-answer.input";
 import { QuestionType } from "../questions.entity";
 
 @InputType()

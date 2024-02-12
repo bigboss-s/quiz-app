@@ -1,13 +1,14 @@
 import { Field, Int, ObjectType, registerEnumType } from "@nestjs/graphql";
-import { Answer } from "src/answers/answer.entity";
-import { Quiz } from "src/quizzes/quiz.entity";
+import { Answer } from "../answers/answer.entity";
+import { Quiz } from "../quizzes/quiz.entity";
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
+
 export enum QuestionType {
-    SINGLE_ANSWER = 'SINGLE_ANSWER',
-    MULTIPLE_ANSWERS = 'MULTIPLE_ANSWERS',
-    ORDERED_ANSWERS = 'ORDERED_ANSWERS',
-    OPEN_ANSWER = 'OPEN_ANSWER'
+  SINGLE_ANSWER = 'SINGLE_ANSWER',
+  MULTIPLE_ANSWER = 'MULTIPLE_ANSWER',
+  ORDERED_ANSWER = 'ORDERED_ANSWER',
+  OPEN_ANSWER = 'OPEN_ANSWER'
 }
 
 registerEnumType(QuestionType, {

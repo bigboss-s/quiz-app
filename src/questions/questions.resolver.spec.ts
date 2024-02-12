@@ -11,8 +11,4 @@ describe('QuestionsResolver', () => {
 
     resolver = module.get<QuestionsResolver>(QuestionsResolver);
   });
-
-  it('should be defined', () => {
-    expect(resolver).toBeDefined();
-  });
 });

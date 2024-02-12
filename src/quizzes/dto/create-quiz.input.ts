@@ -1,6 +1,6 @@
 import { Field, InputType } from "@nestjs/graphql";
 import { IsAlpha, IsAlphanumeric, IsNotEmpty } from "class-validator";
-import { CreateQuestionInput } from "src/questions/dto/create-question.input";
+import { CreateQuestionInput } from "../../questions/dto/create-question.input";
 
 @InputType()
 export class CreateQuizInput {

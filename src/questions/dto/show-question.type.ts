@@ -1,6 +1,6 @@
 import { Field, Int, ObjectType } from "@nestjs/graphql";
 import { QuestionType } from "../questions.entity";
-import { ShowAnswerDTO } from "src/answers/dto/show-answer.type";
+import { ShowAnswerDTO } from "../../answers/dto/show-answer.type";
 
 @ObjectType()
 export class ShowQuestionDTO {

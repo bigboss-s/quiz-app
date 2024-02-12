@@ -3,9 +3,9 @@ import { Quiz } from './quiz.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateQuizInput } from './dto/create-quiz.input';
-import { Question, QuestionType } from 'src/questions/questions.entity';
-import { Answer } from 'src/answers/answer.entity';
-import { CreateAnswerInput } from 'src/answers/dto/create-answer.input';
+import { Question, QuestionType } from '../questions/questions.entity';
+import { Answer } from '../answers/answer.entity';
+import { CreateAnswerInput } from '../answers/dto/create-answer.input';
 import { ShowQuizDTO } from './dto/show-quiz.type';
 import { ReturnQuizDTO } from './dto/return-quiz.input';
 import { distance } from 'fastest-levenshtein';
@@ -20,49 +20,48 @@ export class QuizzesService {
   ) { }
 
   async createQuiz(createQuizInput: CreateQuizInput): Promise<Quiz> {
-    return await this.quizzesRepository.manager.transaction(async entityManager => {
-      const quiz = await entityManager.save(Quiz, {
-        name: createQuizInput.name,
-        description: createQuizInput.description,
-        questions: createQuizInput.questions.map(question => ({
-          questionString: question.questionString,
-          type: question.type,
-          answers: question.answers.map(answer => ({
-            answerString: answer.answerString,
-            isCorrect: answer.isCorrect,
-            order: answer.order
-          }))
-        }))
-      });
-
-      quiz.questions.forEach(question => {
-        const correctAnswersCount = question.answers.filter(answer => answer.isCorrect).length;
-        const correctNotNullAnswersCount = question.answers.filter(answer => answer.isCorrect !== null).length;
-        const orderedAnswerCount = question.answers.filter(answer => answer.order !== null).length;
-
-        if ([QuestionType.MULTIPLE_ANSWERS, QuestionType.SINGLE_ANSWER].includes(question.type)
-          && correctNotNullAnswersCount !== question.answers.length) {
-          throw new BadRequestException("All answers to single and multiple answer questions must be marked as correct or false");
-        }
-        if (question.type === QuestionType.MULTIPLE_ANSWERS && correctAnswersCount === 0) {
-          throw new BadRequestException("Multiple answer questions must have at least one correct answer");
-        }
-        if (question.type === QuestionType.SINGLE_ANSWER && correctAnswersCount !== 1) {
-          throw new BadRequestException("Single answer question must have exactly one correct answer.");
-        }
-        if (question.type === QuestionType.OPEN_ANSWER && question.answers.length !== 1) {
-          throw new BadRequestException("Plain text answer questions must have exactly one answer");
-        }
-        if (question.type === QuestionType.ORDERED_ANSWERS && orderedAnswerCount !== question.answers.length) {
-          throw new BadRequestException("All answers to a sorting question must be ordered");
-        }
-        if (question.type === QuestionType.ORDERED_ANSWERS && !this.checkAnswerOrder(question.answers)) {
-          throw new BadRequestException("Incorrect answer order. Ordering should start on 1 and increment by 1.");
-        }
-      });
-      return quiz;
+    createQuizInput.questions.forEach(question => {
+      const correctAnswersCount = question.answers.filter(answer => answer.isCorrect).length;
+      const correctNotNullAnswersCount = question.answers.filter(answer => answer.isCorrect !== null).length;
+      const orderedAnswerCount = question.answers.filter(answer => answer.order !== null).length;
+  
+      if ([QuestionType.MULTIPLE_ANSWER, QuestionType.SINGLE_ANSWER].includes(question.type)
+        && correctNotNullAnswersCount !== question.answers.length) {
+        throw new BadRequestException("All answers to single and multiple answer questions must be marked as correct or false");
+      }
+      if (question.type === QuestionType.MULTIPLE_ANSWER && correctAnswersCount === 0) {
+        throw new BadRequestException("Multiple answer questions must have at least one correct answer");
+      }
+      if (question.type === QuestionType.SINGLE_ANSWER && correctAnswersCount !== 1) {
+        throw new BadRequestException("Single answer question must have exactly one correct answer.");
+      }
+      if (question.type === QuestionType.OPEN_ANSWER && question.answers.length !== 1) {
+        throw new BadRequestException("Plain text answer questions must have exactly one answer");
+      }
+      if (question.type === QuestionType.ORDERED_ANSWER && orderedAnswerCount !== question.answers.length) {
+        throw new BadRequestException("All answers to a sorting question must be ordered");
+      }
+      if (question.type === QuestionType.ORDERED_ANSWER && !this.checkAnswerOrder(question.answers)) {
+        throw new BadRequestException("Incorrect answer order. Ordering should start on 1 and increment by 1.");
+      }
     });
+  
+    const quiz = this.quizzesRepository.create({
+      name: createQuizInput.name,
+      description: createQuizInput.description,
+      questions: createQuizInput.questions.map(question => ({
+        questionString: question.questionString,
+        type: question.type,
+        answers: question.answers.map(answer => ({
+          answerString: answer.answerString,
+          isCorrect: answer.isCorrect,
+          order: answer.order
+        }))
+      }))
+    });
+    return await this.quizzesRepository.save(quiz);
   }
+  
 
   private checkAnswerOrder(answers: CreateAnswerInput[]) {
     const orders = answers.map(answer => answer.order);
@@ -82,10 +81,16 @@ export class QuizzesService {
   }
 
   async findOne(quizId: number): Promise<Quiz> {
-    return await this.quizzesRepository.findOne({
-      where: { id: quizId },
-      relations: ['questions', 'questions.answers'],
-    });
+    let quiz: Quiz;
+    try {
+      quiz = await this.quizzesRepository.findOneOrFail({
+        where: { id: quizId },
+        relations: ['questions', 'questions.answers'],
+      });
+    } catch (EntityNotFoundError){
+      throw new BadRequestException('Quiz not found');
+    }
+    return quiz;
   }
 
   async findOneToShow(quizId: number): Promise<ShowQuizDTO> {
@@ -129,9 +134,8 @@ export class QuizzesService {
     for (const returnedQuestion of returnedQuiz.questions) {
       maxPoints++;
       switch (returnedQuestion.type) {
-        
         case QuestionType.SINGLE_ANSWER:
-        case QuestionType.MULTIPLE_ANSWERS: {
+        case QuestionType.MULTIPLE_ANSWER: {
           const answerMap: Record<number, boolean> = {};
           questionMap[returnedQuestion.id].forEach(question => {
             answerMap[question.id] = question.isCorrect;
@@ -139,7 +143,7 @@ export class QuizzesService {
           let isCorrect = true;
           for (const returnedAnswer of returnedQuestion.answers) {
             if (returnedAnswer.isCheckedTrue !== answerMap[returnedAnswer.id]) {
-              console.log("Miss on " + returnedAnswer.id + ": " + returnedAnswer.isCheckedTrue + " instead of " + answerMap[returnedAnswer.id]);
+              //console.log("Miss on " + returnedAnswer.id + ": " + returnedAnswer.isCheckedTrue + " instead of " + answerMap[returnedAnswer.id]);
               isCorrect = false;
               break;
             }
@@ -148,7 +152,7 @@ export class QuizzesService {
           break;
         }
 
-        case QuestionType.ORDERED_ANSWERS: {
+        case QuestionType.ORDERED_ANSWER: {
           const answerMap: Record<number, number> = {};
           questionMap[returnedQuestion.id].forEach(question => {
             answerMap[question.id] = question.order;
@@ -157,7 +161,7 @@ export class QuizzesService {
           for (const returnedAnswer of returnedQuestion.answers) {
             if (returnedAnswer.checkedOrder !== answerMap[returnedAnswer.id]) {
               isCorrect = false;
-              console.log("Miss on " + returnedAnswer.id + ": " + returnedAnswer.checkedOrder + " instead of " + answerMap[returnedAnswer.id])
+              //console.log("Miss on " + returnedAnswer.id + ": " + returnedAnswer.checkedOrder + " instead of " + answerMap[returnedAnswer.id])
               break;
             }
           }
@@ -170,7 +174,7 @@ export class QuizzesService {
           if (distance(correctAnswer, returnedQuestion.answers[0].answerString) < 3) {
             scoredPoints++
           } else {
-            console.log("Miss on " + returnedQuestion.answers[0].id + ": " + returnedQuestion.answers[0].answerString + " instead of " + correctAnswer);
+            //console.log("Miss on " + returnedQuestion.answers[0].id + ": " + returnedQuestion.answers[0].answerString + " instead of " + correctAnswer);
           }
           break;
         }
