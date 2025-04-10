@@ -1,4 +1,4 @@
-# ONLINE QUIZ NEST.JS LEARNING ASSIGNMENT
+# Next.js quiz app
 ## Quiz API instructions
 * database environment variables are located in the `.env` file
 * to run the API:
